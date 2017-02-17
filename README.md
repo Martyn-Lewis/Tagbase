@@ -27,6 +27,27 @@ yields the expected results
     d3
     d2
 
+from the expected parse tree
+
+    Parsing query: SELECT * FROM (SELECT * FROM db1 WITH 'a' JOIN SELECT * FROM db2 WITH 'b') WITH 'a b'
+    Multiple statements:
+    	Select statement:
+    		source:
+    			subquery:
+    				join:
+    					Select statement:
+    						source:
+    							database reference: db1
+    						typestring: *
+    						expression: a
+    					Select statement:
+    						source:
+    							database reference: db2
+    						typestring: *
+    						expression: b
+    		typestring: *
+    		expression: (a & b)
+
 Some notable features of the optimisations
 
     Given a query such as a & b, if either a or b doesn't appear in the database, then execution will just yield nothing (nothing to do after all)
