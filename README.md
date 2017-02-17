@@ -1,5 +1,4 @@
-# Scala Practice #1
-This is the first thing I made using Scala, and suitably, it is quite the mess.
+# Tagbase
 
 # But what does it do?
 It's a parser that takes simple boolean expressions (such as "a ? b : (c | d | (b e))") that act on tags (which are attached to objects) and builds them into a composed function.
