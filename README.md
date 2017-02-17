@@ -7,8 +7,8 @@ This composed function can then be applied to an object (or a list of objects wi
 
 The profiler method was just the result of curiosity, though it does reach a fairly decent ~60mn items per second on my system.
 
-## After commit 577bdd
-Commit 577bdd added context-free (produces a query that is objectively improved regardless of the dataset it's applied to) and contextual optimisations (produces a query that is subjectively improved only for the dataset provided).
+## After query update
+The query update added context-free (produces a query that is objectively improved regardless of the dataset it's applied to) and contextual optimisations (produces a query that is subjectively improved only for the dataset provided).
 
 Further added was a parser for SELECT/JOIN/COUNT operations, where the input
 
