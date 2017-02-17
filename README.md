@@ -1,7 +1,7 @@
 # Tagbase
 
-# But what does it do?
-It's a parser that takes simple boolean expressions (such as "a ? b : (c | d | (b e))") that act on tags (which are attached to objects) and builds them into a composed function.
+# What does it do?
+It's currently a parser that takes simple boolean expressions (such as "a ? b : (c | d | (b e))") that act on tags (which are attached to objects) and builds them into a composed function.
 
 This composed function can then be applied to an object (or a list of objects with filter) that inherits from Taggable and returns true or false if it matches.
 
