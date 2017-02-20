@@ -1,6 +1,6 @@
 package parser
 
-import database_test.DatabasePool
+import datatypes.DatabasePool
 
 class SelectStatement(val database: TableStatement, val typestring: String, val expression: Expression) extends Statement {
   override def toString: String = "SELECT " + typestring + " FROM " + database + " WITH " + expression.toString

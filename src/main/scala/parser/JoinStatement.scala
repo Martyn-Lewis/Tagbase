@@ -1,6 +1,6 @@
 package parser
 
-import database_test.DatabasePool
+import datatypes.DatabasePool
 
 class JoinStatement(val queries: List[Statement]) extends Statement {
   override def toString: String = queries map ("(" + _.toString + ")") mkString " JOIN "

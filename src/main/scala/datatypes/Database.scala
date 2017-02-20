@@ -1,6 +1,4 @@
-package database_test
-
-import parser.Taggable
+package datatypes
 
 class Database {
   var elements: List[Taggable] = List.empty

@@ -1,6 +1,7 @@
 package database_test
 
-import parser.{ExpressionParser, Taggable}
+import datatypes.Taggable
+import parser.ExpressionParser
 
 object profiler extends scala.App {
 

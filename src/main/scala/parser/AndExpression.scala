@@ -1,5 +1,7 @@
 package parser
 
+import datatypes.Taggable
+
 class AndExpression(left: Expression, right: Expression) extends Expression {
   override def toString: String = "(" + left.toString + " & " + right.toString + ")"
 

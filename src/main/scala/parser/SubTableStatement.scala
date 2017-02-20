@@ -1,6 +1,6 @@
 package parser
 
-import database_test.DatabasePool
+import datatypes.DatabasePool
 
 class SubTableStatement(statement: Statement) extends TableStatement {
   override def toString: String = "query@(" + statement.toString + ")"

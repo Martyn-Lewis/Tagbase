@@ -1,5 +1,7 @@
 package parser
 
+import datatypes.Taggable
+
 abstract class Expression() {
   def compile(): ExecutableExpression = compile_method() match {
     case _: NeverExpression => new PointlesssExecutableExpression

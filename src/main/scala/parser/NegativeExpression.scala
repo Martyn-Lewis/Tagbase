@@ -1,5 +1,7 @@
 package parser
 
+import datatypes.Taggable
+
 class NegativeExpression(_expression: Expression) extends Expression {
   val expression: Expression = _expression
   override def toString: String = "-" + expression.toString

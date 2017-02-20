@@ -1,5 +1,7 @@
 package parser
 
+import datatypes.Taggable
+
 class AllExpression(var children: Set[TagExpression]) extends Expression {
   override def toString: String = "(" + (children map (_.toString)).mkString(" & ") + ")"
 

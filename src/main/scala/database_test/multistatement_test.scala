@@ -1,8 +1,12 @@
 package database_test
 
-import parser.{QueryParser, StatementCollection, Taggable}
+import datatypes.{DatabasePool, Taggable}
+import parser.{QueryParser, StatementCollection}
 
 object multistatement_test extends scala.App {
+  // Note: Currently the statement has too much power over the database.
+  // It would perhaps be much saner though slower to have the statement yield transactions or similar instead.
+
   class Datatype(val contents: String, tags_to_use: Set[String]) extends Taggable {
     override var tags: Set[String] = tags_to_use
   }

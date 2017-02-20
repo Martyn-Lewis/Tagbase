@@ -1,5 +1,6 @@
 package parser
 
+import datatypes.Taggable
 import org.scalatest.FunSuite
 
 class Data(contents: String, data_tags: Set[String]) extends Taggable {

@@ -1,6 +1,6 @@
 package parser
 
-import database_test.DatabasePool
+import datatypes.DatabasePool
 
 class StatementCollection(val statements: List[Statement]) extends Statement {
   override def toString: String = statements map (_.toString) mkString "; "

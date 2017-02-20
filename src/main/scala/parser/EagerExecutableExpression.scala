@@ -1,5 +1,7 @@
 package parser
 
+import datatypes.Taggable
+
 class EagerExecutableExpression() extends ExecutableExpression {
   override def evaluate: Taggable => Boolean = (x) => true
 

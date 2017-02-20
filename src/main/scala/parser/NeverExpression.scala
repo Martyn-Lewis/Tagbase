@@ -1,5 +1,7 @@
 package parser
 
+import datatypes.Taggable
+
 class NeverExpression() extends Expression {
   override def toString: String = "never"
 

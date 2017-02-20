@@ -1,5 +1,7 @@
 package parser
 
+import datatypes.Taggable
+
 class TernaryExpression(predicate: Expression, left: Expression, right: Expression) extends Expression {
   override def toString: String = predicate.toString + " ? " + left.toString + " : " + right.toString
 

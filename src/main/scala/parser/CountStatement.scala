@@ -1,6 +1,6 @@
 package parser
 
-import database_test.DatabasePool
+import datatypes.DatabasePool
 
 class CountStatement(val database: TableStatement, val typestring: String, val expression: Expression) extends Statement {
   override def toString: String = "COUNT " + typestring + " FROM " + database + " WITH " + expression.toString

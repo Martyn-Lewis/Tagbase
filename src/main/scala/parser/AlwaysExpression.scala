@@ -1,5 +1,7 @@
 package parser
 
+import datatypes.Taggable
+
 class AlwaysExpression() extends Expression {
   override def toString: String = "always"
 

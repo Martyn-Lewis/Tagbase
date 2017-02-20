@@ -1,6 +1,6 @@
 package parser
 
-import database_test.DatabasePool
+import datatypes.{DatabasePool, Taggable}
 
 abstract class Statement {
   def indented_print(indent: Int): Unit

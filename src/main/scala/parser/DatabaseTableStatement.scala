@@ -1,6 +1,6 @@
 package parser
 
-import database_test.DatabasePool
+import datatypes.DatabasePool
 
 class DatabaseTableStatement(database: String) extends TableStatement {
   override def toString: String = "database@" + database

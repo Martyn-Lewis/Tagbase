@@ -1,4 +1,4 @@
-package database_test
+package datatypes
 
 class DatabasePool {
   var pools: collection.mutable.Map[String, Database] = collection.mutable.Map[String, Database]()

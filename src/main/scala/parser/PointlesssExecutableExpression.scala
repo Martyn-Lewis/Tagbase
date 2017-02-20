@@ -1,5 +1,7 @@
 package parser
 
+import datatypes.Taggable
+
 class PointlesssExecutableExpression() extends ExecutableExpression {
   override def evaluate: Taggable => Boolean = (x) => false
 

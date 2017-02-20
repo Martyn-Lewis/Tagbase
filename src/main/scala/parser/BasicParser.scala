@@ -1,6 +1,6 @@
 package parser
 
-import database_test.{Database, DatabasePool}
+import datatypes.Database
 
 import scala.annotation.tailrec
 import scala.util.parsing.combinator._

@@ -1,5 +1,7 @@
 package parser
 
+import datatypes.Taggable
+
 class TagExpression(val tag: Tag) extends Expression {
   override def toString: String = tag.toString
 
