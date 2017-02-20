@@ -1,7 +1,7 @@
 package database_test
 
 import datatypes.Taggable
-import parser.ExpressionParser
+import parser.{AllExpression, ExpressionParser, TagExpression}
 
 object profiler extends scala.App {
 
@@ -16,16 +16,44 @@ object profiler extends scala.App {
   val construct_start = System.nanoTime()
 
   var predata: List[Datatype] = List()
+  var indexes: collection.mutable.Map[String, List[Datatype]] = collection.mutable.Map[String, List[Datatype]]()
+  for(k <- List("a", "b", "c", "d", "e", "f")) {
+    indexes(k) = List.empty
+  }
   predata ::= new Datatype("d1", Set("a"))
+  indexes("a") ::= predata.head
   predata ::= new Datatype("d2", Set("a", "b"))
+  indexes("a") ::= predata.head
+  indexes("b") ::= predata.head
   predata ::= new Datatype("d3", Set("a", "b", "c"))
+  indexes("a") ::= predata.head
+  indexes("b") ::= predata.head
+  indexes("c") ::= predata.head
   predata ::= new Datatype("d4", Set("a", "b", "c", "d"))
+  indexes("a") ::= predata.head
+  indexes("b") ::= predata.head
+  indexes("c") ::= predata.head
+  indexes("d") ::= predata.head
   predata ::= new Datatype("d5", Set("a", "b", "c", "d", "e"))
+  indexes("a") ::= predata.head
+  indexes("b") ::= predata.head
+  indexes("c") ::= predata.head
+  indexes("d") ::= predata.head
+  indexes("e") ::= predata.head
   predata ::= new Datatype("d6", Set("a", "b", "c", "d", "e", "f"))
+  indexes("a") ::= predata.head
+  indexes("b") ::= predata.head
+  indexes("c") ::= predata.head
+  indexes("d") ::= predata.head
+  indexes("e") ::= predata.head
+  indexes("f") ::= predata.head
 
   data :::= predata
-  for (i <- 1 to 16) {
+  for (i <- 1 to 20) {
     data :::= data
+    for(k <- indexes.keys) {
+      indexes(k) :::= indexes(k)
+    }
   }
 
   // index_weights are how often each tag occurs in the database.
@@ -47,7 +75,7 @@ object profiler extends scala.App {
   val construct_end = System.nanoTime()
   println("Construction completed in " + (construct_end - construct_start) / 1000000 + "ms")
 
-  val query = "a ? (b (c|g)) : (c (d|(e f)))"
+  val query = "((a b) | (g f)) ? f c : k m"
   println("Evaluating query: " + query)
 
   val parsed = test_parser.parse(test_parser.EXPRESSION, query).get
@@ -60,6 +88,11 @@ object profiler extends scala.App {
   val thread_count: Long = Runtime.getRuntime().availableProcessors()
   val iterations: Long = 64
 
+  val source = optimised match {
+    case src: AllExpression => indexes(src.children.min(Ordering.by((k: TagExpression) => index_weights(k.tag.word))).tag.word)
+    case src => data
+  }
+
   for (i <- 1 to thread_count.toInt) {
     threads ::= new Thread(new Runnable {
       override def run() = {
@@ -69,11 +102,11 @@ object profiler extends scala.App {
           //val result = (data filter compiled).toList
           var result = 0
 
-          result = compiled.evaluate_many(data.toIterator).size
+          result = compiled.evaluate_many(source.toIterator).size
 
           val evaluate_end = System.nanoTime().asInstanceOf[Double]
           val seconds: Double = (evaluate_end - evaluate_start) / 1000000000.0
-          println("Evaluation completed in " + (evaluate_end - evaluate_start) / 1000000.0 + "ms - " + (data.size.asInstanceOf[Float] / seconds) + " items per second - " + result + " matches")
+          println(s"(Thread $i) Evaluation completed in " + (evaluate_end - evaluate_start) / 1000000.0 + "ms - " + (data.size.asInstanceOf[Float] / seconds) + " items per second - " + result + " matches")
         }
       }
     })
