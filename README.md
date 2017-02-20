@@ -1,5 +1,15 @@
 # Tagbase
 
+# Current progress
+
+    Executing statement: INSERT INTO db1 VALUES {tags="a, b, c", value="Test row 1"}, {tags="a, b, c", value="Test row 2"}
+    Executing statement: INSERT INTO db2 VALUES {tags="a, b, c", value="Test row 3"}, {tags="a, b, c", value="Test row 4"}
+    Executing statement: SELECT * FROM (SELECT * FROM db1 WITH 'a' JOIN SELECT * FROM db2 WITH 'b') WITH 'a b'
+    Database result: (a, b, c) Test row 2
+    Database result: (a, b, c) Test row 1
+    Database result: (a, b, c) Test row 4
+    Database result: (a, b, c) Test row 3
+
 # What does it do?
 It's currently a parser that takes simple boolean expressions (such as "a ? b : (c | d | (b e))") that act on tags (which are attached to objects) and builds them into a composed function.
 
