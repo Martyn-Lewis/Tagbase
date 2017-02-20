@@ -1,5 +1,6 @@
 package parser
 
+import scala.util.matching.Regex.Match
 import scala.util.parsing.combinator.RegexParsers
 
 class QueryParser extends RegexParsers {
@@ -9,6 +10,8 @@ class QueryParser extends RegexParsers {
   def KW_SELECT: Parser[String] = """SELECT""".r ^^ { _.toString }
   def KW_FROM: Parser[String] = """FROM""".r ^^ { _.toString }
   def KW_WITH: Parser[String] = """WITH""".r ^^ { _.toString }
+  def KW_INSERT: Parser[String] = """INSERT""".r ~ whiteSpace ~ """INTO""".r ^^ { case l ~ _ ~ r => l + " " + r }
+  def KW_VALUES: Parser[String] = """VALUES""".r ^^ { _.toString }
   def TYPESTRING: Parser[String] = """[\*]""".r ^^ { _.toString } // TODO
   def DBSTRING: Parser[String] = """[a-zA-Z_0-9]+""".r ^^ { _.toString } // TODO
   def SEMICOLON: Parser[String] = """[;]""".r ^^ { _.toString }
@@ -18,6 +21,42 @@ class QueryParser extends RegexParsers {
   def TABLE: Parser[TableStatement] = (DBSTRING | ("(" ~> JOIN_STMT <~ ")")) ^^ {
     case s: Statement => new SubTableStatement(s)
     case s: String => new DatabaseTableStatement(s)
+  }
+
+  def STRING: Parser[String] = """["]([\\]["]|[^"])+["]""".r ^^ {
+    case s: String =>
+      """[\\][brnt"]""".r.replaceAllIn(s, m => m.group(0) match {
+        case "\\n" => "\n"
+        case "\\b" => "\b"
+        case "\\t" => "\t"
+        case "\\r" => "\r"
+        case "\\\"" => "\""
+        case _ => m.group(0)
+      })
+  }
+
+  def NUMBER: Parser[String] = """[0-9]+""".r ~ opt("""[.][0-9]+""") ^^ {
+    case left ~ None => left
+    case left ~ Some(right) => left + right
+  }
+
+  def KEY = DBSTRING
+  def VALUE = STRING | NUMBER
+
+  def PAIR: Parser[(String, String)] = KEY ~ (opt(whiteSpace) ~> "=" <~ opt(whiteSpace)) ~ VALUE ^^ {
+    case left ~ _ ~ right => (left, right)
+  }
+
+  def OBJECT: Parser[QueryObject] = ("{" <~ opt(whiteSpace)) ~ repsep(PAIR, opt(whiteSpace) ~ "," ~ opt(whiteSpace)) ~ (opt(whiteSpace) ~> "}") ^^ {
+    case _ ~ (middle: List[(String, String)]) ~ _ =>
+      new QueryObject(middle)
+  }
+
+  // INSERT INTO tablestring VALUES { tags={...}, type=typestring, value=<typestring>::value }, ...
+
+  def INSERT_INTO: Parser[InsertStatement] = (KW_INSERT <~ whiteSpace) ~ (DBSTRING <~ whiteSpace) ~ (KW_VALUES <~ whiteSpace) ~ rep1sep(OBJECT, opt(whiteSpace) ~ "," ~ opt(whiteSpace)) ^^ {
+    case insert ~ table ~ values ~ objects =>
+      new InsertStatement(table, objects)
   }
 
   // SELECT typestring FROM tablestring WHERE 'query'
@@ -39,6 +78,6 @@ class QueryParser extends RegexParsers {
   // <SELECT> JOIN <SELECT | JOIN>
   def JOIN_STMT: Parser[Statement] = rep1sep(SELECT_FROM, whiteSpace ~ """JOIN""".r ~ whiteSpace) ^^ { case statements => if(statements.size > 1) new JoinStatement(statements) else statements.head }
 
-  def STATEMENT: Parser[Statement] = opt(whiteSpace) ~> (JOIN_STMT | COUNT_FROM) <~ opt(NEWLINE)
+  def STATEMENT: Parser[Statement] = opt(whiteSpace) ~> (JOIN_STMT | COUNT_FROM | INSERT_INTO) <~ opt(NEWLINE)
   def QUERY: Parser[StatementCollection] = rep1sep(STATEMENT, opt(whiteSpace) ~ SEMICOLON) ^^ { case s => new StatementCollection(s) }
 }
