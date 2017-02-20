@@ -20,18 +20,23 @@ class QueryParser extends RegexParsers {
     case s: String => new DatabaseTableStatement(s)
   }
 
+  // SELECT typestring FROM tablestring WHERE 'query'
   def SELECT_FROM: Parser[SelectStatement] = (KW_SELECT <~ whiteSpace) ~ (TYPESTRING <~ whiteSpace) ~ (KW_FROM <~ whiteSpace) ~ TABLE ~ opt((whiteSpace ~> KW_WITH) ~ (whiteSpace ~> SUBEXPR)) ^^ {
     case kw_select ~ typestring ~ kw_from ~ table ~ opt => opt match {
       case Some(kw_with ~ expression) => new SelectStatement(table, typestring, expressionParser.parse(expressionParser.EXPRESSION, expression).get)
       case _ => new SelectStatement(table, typestring, new AlwaysExpression)
     }
   }
+
+  // COUNT typestring FROM tablestring WHERE 'query'
   def COUNT_FROM: Parser[CountStatement] = (KW_COUNT <~ whiteSpace) ~ (TYPESTRING <~ whiteSpace) ~ (KW_FROM <~ whiteSpace) ~ TABLE ~ opt((whiteSpace ~> KW_WITH) ~ (whiteSpace ~> SUBEXPR)) ^^ {
     case kw_count ~ typestring ~ kw_from ~ table ~ option => option match {
       case Some(kw_with ~ expression) => new CountStatement(table, typestring, expressionParser.parse(expressionParser.EXPRESSION, expression).get)
       case _ => new CountStatement(table, typestring, new AlwaysExpression)
     }
   }
+
+  // <SELECT> JOIN <SELECT | JOIN>
   def JOIN_STMT: Parser[Statement] = rep1sep(SELECT_FROM, whiteSpace ~ """JOIN""".r ~ whiteSpace) ^^ { case statements => if(statements.size > 1) new JoinStatement(statements) else statements.head }
 
   def STATEMENT: Parser[Statement] = opt(whiteSpace) ~> (JOIN_STMT | COUNT_FROM) <~ opt(NEWLINE)
