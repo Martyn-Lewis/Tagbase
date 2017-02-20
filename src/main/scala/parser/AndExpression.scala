@@ -2,7 +2,7 @@ package parser
 
 import datatypes.Taggable
 
-class AndExpression(left: Expression, right: Expression) extends Expression {
+class AndExpression(val left: Expression, val right: Expression) extends Expression {
   override def toString: String = "(" + left.toString + " & " + right.toString + ")"
 
   override def compile_method(): (Taggable) => Boolean = {
@@ -19,17 +19,50 @@ class AndExpression(left: Expression, right: Expression) extends Expression {
     val l = left.contextual_optimise(index)
     val r = right.contextual_optimise(index)
 
-    if(l.generate_weight(index) < r.generate_weight(index)) new AndExpression(l, r)
-    else new AndExpression(r, l)
+    def cascade = {
+      val optimised: Expression =
+        if (l.generate_weight(index) < r.generate_weight(index)) new AndExpression(l, r).context_free_optimise()
+        else new AndExpression(r, l).context_free_optimise()
+
+      optimised match {
+        case child: AndExpression =>
+          if ((child.left != left && child.left != right) && (child.right != left && child.right != right))
+            optimised.contextual_optimise (index)
+          else
+            optimised
+        case _ => optimised.contextual_optimise(index)
+      }
+    }
+
+    l match {
+      case t: TagExpression => r match {
+        case right: AllExpression => new AllExpression(right.children + t).contextual_optimise(index)
+        case _ => cascade
+      }
+      case _ => cascade
+    }
   }
 
-  override def context_free_optimise(): Expression = left.context_free_optimise() match {
-    case t: NeverExpression => t
-    case t: AlwaysExpression => right.context_free_optimise()
-    case t => right.context_free_optimise() match {
+  override def context_free_optimise(): Expression = {
+    def right_check(t: Expression) = right.context_free_optimise() match {
       case c: NeverExpression => t
       case c: AlwaysExpression => t
       case c => new AndExpression(t, c)
+    }
+    left.context_free_optimise() match {
+      case t: NeverExpression => t
+      case t: AlwaysExpression => right.context_free_optimise()
+      case t: AllExpression => right.context_free_optimise() match {
+        case r: TagExpression => new AllExpression(t.children + r)
+        case r: AllExpression => new AllExpression(r.children ++ t.children)
+        case r => right_check(t)
+      }
+      case t: TagExpression => right.context_free_optimise() match {
+        case r: TagExpression => new AllExpression(Set(t, r))
+        case r: AllExpression => new AllExpression(r.children + t)
+        case r => right_check(t)
+      }
+      case t => right_check(t)
     }
   }
 }

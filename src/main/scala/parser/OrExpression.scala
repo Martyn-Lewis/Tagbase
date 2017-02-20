@@ -34,7 +34,7 @@ class OrExpression(left: Expression, right: Expression) extends Expression {
   }
 
   override def contextual_optimise(index: Map[String, Double]): Expression = {
-    left.contextual_optimise(index) match {
+    (left.contextual_optimise(index) match {
       case t: TagExpression =>
         if(index.keySet.contains(t.tag.word)) right.contextual_optimise(index) match {
           case child: TagExpression =>
@@ -56,7 +56,7 @@ class OrExpression(left: Expression, right: Expression) extends Expression {
         if(t.generate_weight(index) > r.generate_weight(index)) new OrExpression(t, r)
         else new OrExpression(r, t)
       }
-    }
+    }).context_free_optimise()
   }
 
   override def compile_method(): (Taggable) => Boolean = {
