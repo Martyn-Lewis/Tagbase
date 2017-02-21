@@ -5,10 +5,15 @@
     Executing statement: INSERT INTO db1 VALUES {tags="a, b, c", value="Test row 1"}, {tags="a, b, c", value="Test row 2"}
     Executing statement: INSERT INTO db2 VALUES {tags="a, b, c", value="Test row 3"}, {tags="a, b, c", value="Test row 4"}
     Executing statement: SELECT * FROM (SELECT * FROM db1 WITH 'a' JOIN SELECT * FROM db2 WITH 'b') WITH 'a b'
-    Database result: (a, b, c) Test row 2
-    Database result: (a, b, c) Test row 1
-    Database result: (a, b, c) Test row 4
-    Database result: (a, b, c) Test row 3
+    Database result: (a, b, c) Map(value -> "Test row 2")
+    Database result: (a, b, c) Map(value -> "Test row 1")
+    Database result: (a, b, c) Map(value -> "Test row 4")
+    Database result: (a, b, c) Map(value -> "Test row 3")
+    Executing statement: INSERT INTO my_directory VALUES {tags="photos, kittens", path="kitty.jpg", attributes="read-only"}
+    Executing statement: INSERT INTO my_directory VALUES {tags="photos, dogs", path="puppy.jpg", attributes="read-only"}
+    Executing statement: SELECT * FROM my_directory WITH 'photos'
+    Database result: (photos, dogs) Map(path -> "puppy.jpg", attributes -> "read-only")
+    Database result: (photos, kittens) Map(path -> "kitty.jpg", attributes -> "read-only")
 
 # What does it do?
 It's currently a parser that takes simple boolean expressions (such as "a ? b : (c | d | (b e))") that act on tags (which are attached to objects) and builds them into a composed function.
