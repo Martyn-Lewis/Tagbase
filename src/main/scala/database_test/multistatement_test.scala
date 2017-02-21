@@ -48,9 +48,12 @@ object multistatement_test extends scala.App {
 
   execute_statement("""INSERT INTO my_directory VALUES {tags="photos, kittens", path="kitty.jpg", attributes="read-only"}""")
   execute_statement("""INSERT INTO my_directory VALUES {tags="photos, dogs", path="puppy.jpg", attributes="read-only"}""")
+  execute_statement("""INSERT INTO my_directory VALUES {tags="text, source-code, python", path="hello_world.py", attributes="executable"}""")
+  execute_statement("""INSERT INTO my_directory VALUES {tags="text, source-code, python, test-script", path="test.py", attributes="executable"}""")
   execute_statement("""SELECT * FROM my_directory WITH 'photos'""")
   execute_statement("""SELECT path FROM my_directory WITH 'dogs'""")
   execute_statement("""SELECT path, attributes FROM my_directory WITH 'kittens'""")
+  execute_statement("""SELECT * FROM my_directory WITH 'photos ? kittens : source-code'""")
 
   for(p <- List(pool1, pool2, pool3)) {
     p.add_element(new DatabaseRow(Map("contents" -> "d1"), Set("a")))
