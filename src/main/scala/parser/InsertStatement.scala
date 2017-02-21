@@ -21,23 +21,13 @@ class InsertStatement(val database: String, val objects: List[QueryObject]) exte
   override def evaluate(db: DatabasePool) = {
     val target = db.get_pool(database)
     for(obj <- objects) {
-      val tags = obj.objects find {
-        case ("tags", s) => true
-        case _ => false
-      } match {
+      val tags = obj.objects find (_._1 == "tags") match {
         case Some((_, s)) => s.substring(1, s.length - 1).split(",").map(_.trim)
         case None => throw new RuntimeException("(Rename this exception) No tags to insert with")
       }
 
-      val value = obj.objects find {
-        case ("value", s) => true
-        case _ => false
-      } match {
-        case Some((_, s)) => s.substring(1, s.length - 1)
-        case None => throw new RuntimeException("(Rename this exception) No tags to insert with")
-      }
-
-      target.add_element(new DatabaseRow(value, tags.toSet))
+      val values = obj.objects.filter(_._1 != "tags").map((x) => x._1 -> x._2).toMap
+      target.add_element(new DatabaseRow(values, tags.toSet))
     }
 
     Iterator.empty

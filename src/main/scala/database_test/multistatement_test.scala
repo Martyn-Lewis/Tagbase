@@ -31,19 +31,24 @@ object multistatement_test extends scala.App {
 
   var pool1 = db.create_pool("db1")
   var pool2 = db.create_pool("db2")
+  var directory = db.create_pool("my_directory")
   var pool3 = db.create_pool("some_database")
 
   execute_statement("""INSERT INTO db1 VALUES {tags="a, b, c", value="Test row 1"}, {tags="a, b, c", value="Test row 2"}""")
   execute_statement("""INSERT INTO db2 VALUES {tags="a, b, c", value="Test row 3"}, {tags="a, b, c", value="Test row 4"}""")
   execute_statement("""SELECT * FROM (SELECT * FROM db1 WITH 'a' JOIN SELECT * FROM db2 WITH 'b') WITH 'a b'""")
 
+  execute_statement("""INSERT INTO my_directory VALUES {tags="photos, kittens", path="kitty.jpg", attributes="read-only"}""")
+  execute_statement("""INSERT INTO my_directory VALUES {tags="photos, dogs", path="puppy.jpg", attributes="read-only"}""")
+  execute_statement("""SELECT * FROM my_directory WITH 'photos'""")
+
   for(p <- List(pool1, pool2, pool3)) {
-    p.add_element(new DatabaseRow("d1", Set("a")))
-    p.add_element(new DatabaseRow("d2", Set("a", "b")))
-    p.add_element(new DatabaseRow("d3", Set("a", "b", "c")))
-    p.add_element(new DatabaseRow("d4", Set("a", "b", "c", "d")))
-    p.add_element(new DatabaseRow("d5", Set("a", "b", "c", "d", "e")))
-    p.add_element(new DatabaseRow("d6", Set("a", "b", "c", "d", "e", "f")))
+    p.add_element(new DatabaseRow(Map("contents" -> "d1"), Set("a")))
+    p.add_element(new DatabaseRow(Map("contents" -> "d2"), Set("a", "b")))
+    p.add_element(new DatabaseRow(Map("contents" -> "d3"), Set("a", "b", "c")))
+    p.add_element(new DatabaseRow(Map("contents" -> "d4"), Set("a", "b", "c", "d")))
+    p.add_element(new DatabaseRow(Map("contents" -> "d5"), Set("a", "b", "c", "d", "e")))
+    p.add_element(new DatabaseRow(Map("contents" -> "d6"), Set("a", "b", "c", "d", "e", "f")))
   }
 
   // Insert test
