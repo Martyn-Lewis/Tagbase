@@ -12,7 +12,11 @@ class QueryParser extends RegexParsers {
   def KW_WITH: Parser[String] = """WITH""".r ^^ { _.toString }
   def KW_INSERT: Parser[String] = """INSERT""".r ~ whiteSpace ~ """INTO""".r ^^ { case l ~ _ ~ r => l + " " + r }
   def KW_VALUES: Parser[String] = """VALUES""".r ^^ { _.toString }
-  def TYPESTRING: Parser[String] = """[\*]""".r ^^ { _.toString } // TODO
+  def TYPESTRING: Parser[List[String]] = (rep1sep(DBSTRING, opt(whiteSpace) ~ "," ~ opt(whiteSpace)) | "*") ^^ {
+    case types: List[String] => types
+    case wildcard: String => List("*")
+  }
+
   def DBSTRING: Parser[String] = """[a-zA-Z_0-9]+""".r ^^ { _.toString } // TODO
   def SEMICOLON: Parser[String] = """[;]""".r ^^ { _.toString }
   def NEWLINE: Parser[String] = """[\n]""".r

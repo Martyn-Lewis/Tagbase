@@ -2,7 +2,7 @@ package parser
 
 import datatypes.DatabasePool
 
-class CountStatement(val database: TableStatement, val typestring: String, val expression: Expression) extends Statement {
+class CountStatement(val database: TableStatement, val typestring: List[String], val expression: Expression) extends Statement {
   override def toString: String = "COUNT " + typestring + " FROM " + database + " WITH " + expression.toString
 
   override def indented_print(indent: Int) = {
@@ -11,7 +11,7 @@ class CountStatement(val database: TableStatement, val typestring: String, val e
     println(offset + "Count statement:")
     println(offsetp1 + "source: ")
     database.indented_print(indent + 2)
-    println(offsetp1 + "typestring: " + typestring)
+    println(offsetp1 + "typestring: " + typestring.mkString(", "))
     println(offsetp1 + "expression: " + expression.toString)
   }
 

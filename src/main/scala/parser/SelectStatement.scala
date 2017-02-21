@@ -2,7 +2,7 @@ package parser
 
 import datatypes.DatabasePool
 
-class SelectStatement(val database: TableStatement, val typestring: String, val expression: Expression) extends Statement {
+class SelectStatement(val database: TableStatement, val typestring: List[String], val expression: Expression) extends Statement {
   override def toString: String = "SELECT " + typestring + " FROM " + database + " WITH " + expression.toString
   override def indented_print(indent: Int) = {
     val offset = "\t" * indent
@@ -10,7 +10,7 @@ class SelectStatement(val database: TableStatement, val typestring: String, val 
     println(offset + "Select statement:")
     println(offsetp1 + "source: ")
     database.indented_print(indent + 2)
-    println(offsetp1 + "typestring: " + typestring)
+    println(offsetp1 + "typestring: " + typestring.mkString(", "))
     println(offsetp1 + "expression: " + expression.toString)
   }
 

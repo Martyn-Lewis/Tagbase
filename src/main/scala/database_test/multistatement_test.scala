@@ -1,7 +1,7 @@
 package database_test
 
-import datatypes.{DatabasePool, Taggable, DatabaseRow}
-import parser.{QueryParser, StatementCollection}
+import datatypes.{DatabasePool, DatabaseRow, Taggable}
+import parser.{QueryParser, SelectStatement, StatementCollection}
 
 object multistatement_test extends scala.App {
   // Note: Currently the statement has too much power over the database.
@@ -20,7 +20,15 @@ object multistatement_test extends scala.App {
       target.statements.foreach ((x) => {
         val results = x.evaluate(db)
         for(result <- results) {
-          println(s"Database result: (${result.tags.map(_.toString).mkString(", ")}) ${result.asInstanceOf[DatabaseRow].contents}")
+          x match {
+            case statement: SelectStatement =>
+              if(statement.typestring.contains("*"))
+                println(s"Database result: (${result.tags.map(_.toString).mkString(", ")}) ${result.asInstanceOf[DatabaseRow].contents}")
+              else {
+                val items = result.asInstanceOf[DatabaseRow].contents.filterKeys(statement.typestring.contains(_))
+                println(s"Database result: (${result.tags.map(_.toString).mkString(", ")}) ${items}")
+              }
+          }
         }
       })
     } else {
@@ -41,6 +49,8 @@ object multistatement_test extends scala.App {
   execute_statement("""INSERT INTO my_directory VALUES {tags="photos, kittens", path="kitty.jpg", attributes="read-only"}""")
   execute_statement("""INSERT INTO my_directory VALUES {tags="photos, dogs", path="puppy.jpg", attributes="read-only"}""")
   execute_statement("""SELECT * FROM my_directory WITH 'photos'""")
+  execute_statement("""SELECT path FROM my_directory WITH 'dogs'""")
+  execute_statement("""SELECT path, attributes FROM my_directory WITH 'kittens'""")
 
   for(p <- List(pool1, pool2, pool3)) {
     p.add_element(new DatabaseRow(Map("contents" -> "d1"), Set("a")))
