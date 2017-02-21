@@ -17,7 +17,7 @@ class SubTableStatement(statement: Statement) extends TableStatement {
       case d: SubTableStatement => d.generate_indexes(db)
       case _ => throw new RuntimeException("This also should be impossible.")
     }
-    case s: JoinStatement => (s.queries.map (_.asInstanceOf[SelectStatement].database.generate_indexes(db))) reduceLeft((l: Map[String, Double], r: Map[String, Double]) => l ++ r.map({ case (k, v) => k -> (v + l.getOrElse(k, 0.0))}))
+    case s: JoinStatement => (s.queries.map (_.asInstanceOf[SelectStatement].database.generate_indexes(db))).reduceLeft((l: Map[String, Double], r: Map[String, Double]) => l ++ r.map({ case (k, v) => k -> (v + l.getOrElse(k, 0.0))}))
     case _ => throw new RuntimeException("This should be impossible.")
   }
 }

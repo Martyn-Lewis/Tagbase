@@ -19,5 +19,5 @@ class Database(val enabled_indexes: Boolean) {
     })
   }
 
-  def generate_weights(): Map[String, Double] = indexes mapValues ((v) => v.asInstanceOf[Double] / elements.size) toMap
+  def generate_weights(): Map[String, Double] = indexes.mapValues((v) => v.asInstanceOf[Double] / elements.size).toMap
 }
