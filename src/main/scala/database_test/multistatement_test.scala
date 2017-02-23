@@ -1,6 +1,6 @@
 package database_test
 
-import datatypes.{DatabasePool, DatabaseRow, Taggable}
+import datatypes._
 import parser.{QueryParser, SelectStatement, StatementCollection}
 
 object multistatement_test extends scala.App {
@@ -10,6 +10,25 @@ object multistatement_test extends scala.App {
   var db = new DatabasePool
   val parser = new QueryParser
 
+  def evaluate_response(response: DatabaseResponse): Unit = response match {
+    case resp: CountResponse =>
+      println("Count:")
+      resp.results foreach ((x) => {
+        println(x._1.toString + " has " + x._2.toString + " elements")
+      })
+    case resp: SelectResponse[DatabaseRow] =>
+      resp.iterator.foreach((x) => {
+        println(s"Database result: (${x.tags.map(_.toString).mkString(", ")}) ${x.asInstanceOf[DatabaseRow].contents}")
+      })
+    case resp: InsertResponse =>
+      resp.inserts.foreach((x) => {
+        println(s"Inserting element: ${x.toString} into ${resp.database}")
+        val as_map = x.objects.toMap
+        db.get_pool(resp.database).add_element(new DatabaseRow(as_map.filter(_._1 != "tags"), as_map("tags").split(",").map(_.stripPrefix("\"").stripSuffix("\"").trim).toSet))
+      })
+    case resp: MultipleResponse => resp.responses.foreach(evaluate_response)
+  }
+
   def execute_statement(stmt: String) = {
     println("Executing statement: " + stmt)
     val parsed_insert = parser.parseAll(parser.QUERY, stmt)
@@ -17,20 +36,7 @@ object multistatement_test extends scala.App {
       val target = parsed_insert.get
       /*target.indented_print(0)
       println(target.toString)*/
-      target.statements.foreach ((x) => {
-        val results = x.evaluate(db)
-        for(result <- results) {
-          x match {
-            case statement: SelectStatement =>
-              if(statement.typestring.contains("*"))
-                println(s"Database result: (${result.tags.map(_.toString).mkString(", ")}) ${result.asInstanceOf[DatabaseRow].contents}")
-              else {
-                val items = result.asInstanceOf[DatabaseRow].contents.filterKeys(statement.typestring.contains(_))
-                println(s"Database result: (${result.tags.map(_.toString).mkString(", ")}) ${items}")
-              }
-          }
-        }
-      })
+      evaluate_response(target.evaluate[DatabaseRow](db))
     } else {
       println("Failed to parse a statement:")
       println(parsed_insert.toString)
@@ -44,6 +50,7 @@ object multistatement_test extends scala.App {
 
   execute_statement("""INSERT INTO db1 VALUES {tags="a, b, c", value="Test row 1"}, {tags="a, b, c", value="Test row 2"}""")
   execute_statement("""INSERT INTO db2 VALUES {tags="a, b, c", value="Test row 3"}, {tags="a, b, c", value="Test row 4"}""")
+  execute_statement("""SELECT * FROM db1 WITH 'a b'""")
   execute_statement("""SELECT * FROM (SELECT * FROM db1 WITH 'a' JOIN SELECT * FROM db2 WITH 'b') WITH 'a b'""")
 
   execute_statement("""INSERT INTO my_directory VALUES {tags="photos, kittens", path="kitty.jpg", attributes="read-only"}""")
@@ -73,7 +80,6 @@ object multistatement_test extends scala.App {
     val target = parsed_insert.get
     target.indented_print(0)
     println(target.toString)
-    target.statements.head.evaluate(db)
   } else {
     println("Failed to parse insert statement")
     println(parsed_insert.toString)
@@ -85,9 +91,4 @@ object multistatement_test extends scala.App {
   val parsed: StatementCollection = parser.parseAll(parser.QUERY, query).get
   parsed.indented_print(0)
   println(parsed.toString)
-
-  val results: Iterator[DatabaseRow] = (parsed.statements.head).evaluate(db).asInstanceOf[Iterator[DatabaseRow]]
-  results foreach ((x) => {
-    println(x.contents)
-  })
 }

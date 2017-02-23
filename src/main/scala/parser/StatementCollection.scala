@@ -1,6 +1,6 @@
 package parser
 
-import datatypes.DatabasePool
+import datatypes.{DatabasePool, MultipleResponse}
 
 class StatementCollection(val statements: List[Statement]) extends Statement {
   override def toString: String = statements map (_.toString) mkString "; "
@@ -10,5 +10,5 @@ class StatementCollection(val statements: List[Statement]) extends Statement {
     statements foreach (_.indented_print(indent + 1))
   }
 
-  override def evaluate(db: DatabasePool) = throw new RuntimeException("Don't evaluate a statement collection like this")
+  override def evaluate[T](db: DatabasePool) = new MultipleResponse(statements.map(_.evaluate[T](db)))
 }

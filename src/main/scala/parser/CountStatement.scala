@@ -15,5 +15,5 @@ class CountStatement(val database: TableStatement, val typestring: List[String],
     println(offsetp1 + "expression: " + expression.toString)
   }
 
-  override def evaluate(db: DatabasePool) = throw new RuntimeException("Don't evaluate a count like this.")
+  override def evaluate[T](db: DatabasePool) = throw new RuntimeException("Don't evaluate a count like this.")
 }

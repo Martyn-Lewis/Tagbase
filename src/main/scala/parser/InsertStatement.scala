@@ -1,6 +1,6 @@
 package parser
 
-import datatypes.{DatabasePool, DatabaseRow}
+import datatypes.{DatabasePool, DatabaseRow, InsertResponse}
 
 class InsertStatement(val database: String, val objects: List[QueryObject]) extends Statement {
   override def toString: String = "INSERT INTO " + database + " VALUES " + (objects map (_.toString) mkString ", ")
@@ -18,18 +18,9 @@ class InsertStatement(val database: String, val objects: List[QueryObject]) exte
     }
   }
 
-  override def evaluate(db: DatabasePool) = {
+  override def evaluate[T](db: DatabasePool) = {
     val target = db.get_pool(database)
-    for(obj <- objects) {
-      val tags = obj.objects find (_._1 == "tags") match {
-        case Some((_, s)) => s.substring(1, s.length - 1).split(",").map(_.trim)
-        case None => throw new RuntimeException("(Rename this exception) No tags to insert with")
-      }
 
-      val values = obj.objects.filter(_._1 != "tags").map((x) => x._1 -> x._2).toMap
-      target.add_element(new DatabaseRow(values, tags.toSet))
-    }
-
-    Iterator.empty
+    new InsertResponse(database, objects)
   }
 }

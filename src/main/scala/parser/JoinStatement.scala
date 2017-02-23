@@ -1,6 +1,6 @@
 package parser
 
-import datatypes.DatabasePool
+import datatypes.{DatabasePool, SelectResponse, MultipleResponse}
 
 class JoinStatement(val queries: List[Statement]) extends Statement {
   override def toString: String = queries map ("(" + _.toString + ")") mkString " JOIN "
@@ -10,5 +10,5 @@ class JoinStatement(val queries: List[Statement]) extends Statement {
     queries foreach (_.indented_print(indent + 1))
   }
 
-  override def evaluate(db: DatabasePool) = queries.flatMap(_.evaluate(db)).toIterator
+  override def evaluate[T](db: DatabasePool) = new MultipleResponse(queries.map(_.evaluate[T](db)))
 }

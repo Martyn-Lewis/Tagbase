@@ -1,6 +1,6 @@
 package parser
 
-import datatypes.DatabasePool
+import datatypes.{DatabasePool, DatabaseResponse, SelectResponse, Taggable}
 
 class SelectStatement(val database: TableStatement, val typestring: List[String], val expression: Expression) extends Statement {
   override def toString: String = "SELECT " + typestring + " FROM " + database + " WITH " + expression.toString
@@ -14,11 +14,11 @@ class SelectStatement(val database: TableStatement, val typestring: List[String]
     println(offsetp1 + "expression: " + expression.toString)
   }
 
-  override def evaluate(db: DatabasePool) = {
-    val source = database.evaluate(db)
+  override def evaluate[T](db: DatabasePool): DatabaseResponse = {
+    val source = database.evaluate[T](db)
     val indexes = database.generate_indexes(db)
     val query = expression.full_optimise(indexes)
 
-    query.compile().evaluate_many(source)
+    new SelectResponse[T](query.compile().evaluate_many(source.iterator.asInstanceOf[Iterator[Taggable]]).asInstanceOf[Iterator[T]])
   }
 }
