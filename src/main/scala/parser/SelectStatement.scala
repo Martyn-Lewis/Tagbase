@@ -19,6 +19,24 @@ class SelectStatement(val database: TableStatement, val typestring: List[String]
     val indexes = database.generate_indexes(db)
     val query = expression.full_optimise(indexes)
 
-    new SelectResponse[T](query.compile().evaluate_many(source.iterator.asInstanceOf[Iterator[Taggable]]).asInstanceOf[Iterator[T]])
+    def default = new SelectResponse[T](query.compile().evaluate_many(source.iterator.asInstanceOf[Iterator[Taggable]]).asInstanceOf[Iterator[T]])
+
+    // TODO: Not this
+    // Index support-ish
+    database match {
+      case d: DatabaseTableStatement =>
+        query match {
+          case q: AllExpression => // (a & b) = min(a, b)
+            val tag = indexes.minBy(_._2)._1
+            val pool = db.get_pool(d.database)
+            if(pool.index_records.contains(tag))
+              new SelectResponse[T](query.compile().evaluate_many(pool.index_records(tag).toIterator).asInstanceOf[Iterator[T]])
+            else
+              default
+          case _ => default
+        }
+      case _ =>
+        default
+    }
   }
 }

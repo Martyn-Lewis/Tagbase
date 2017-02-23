@@ -10,20 +10,15 @@ object nuprofiler extends scala.App {
   val parser = new QueryParser
 
   def timeit(times: Int)(f: (() => Unit)): Double = {
-    var average: Double = 0.0
-    for(i <- 1 to times) {
+    (1 to times).par.map((i) => {
       val evaluate_start = System.nanoTime().asInstanceOf[Double]
       f()
       val evaluate_end = System.nanoTime().asInstanceOf[Double]
       val distance = evaluate_end - evaluate_start
       val millis = distance / (1000 * 1000)
       println(s"Cycle $i took $millis milliseconds")
-      if(average == 0.0)
-        average = millis
-      else
-        average = (average + millis) / 2
-    }
-    average
+      millis
+    }).sum / times
   }
 
   def evaluate_response(response: DatabaseResponse): Option[Iterator[DatabaseRow]] = response match {
@@ -39,7 +34,8 @@ object nuprofiler extends scala.App {
     case resp: InsertResponse =>
       resp.inserts.foreach((x) => {
         val as_map = x.objects.toMap
-        datapool.get_pool(resp.database).add_element(new DatabaseRow(as_map.filter(_._1 != "tags"), as_map("tags").split(",").map(_.stripPrefix("\"").stripSuffix("\"").trim).toSet))
+        val pool = datapool.get_pool(resp.database)
+        pool.add_element(new DatabaseRow(as_map.filter(_._1 != "tags"), as_map("tags").split(",").map(_.stripPrefix("\"").stripSuffix("\"").trim).toSet))
       })
       None
     case resp: MultipleResponse =>
@@ -62,7 +58,7 @@ object nuprofiler extends scala.App {
   datapool.create_pool("insert_test")
 
   val insert_tests = 4000
-  val insert_query = """INSERT INTO insert_test VALUES {tags="a, b, c", value="Test row 1"}, {tags="a, b, c", value="Test row 2"}, {tags="a, b, c", value="Test row 3"}, {tags="a, b, c", value="Test row 4"}"""
+  val insert_query = """INSERT INTO insert_test VALUES {tags="a, b, c", value="Test row 1"}, {tags="a, b", value="Test row 2"}, {tags="a", value="Test row 3"}, {tags="a, b, c, d", value="Test row 4"}"""
 
   val distance = timeit(10)(() => {
     for (i <- 0 until insert_tests) {
@@ -85,11 +81,10 @@ object nuprofiler extends scala.App {
   println(s"$insert_tests preparsed insertion statements (${insert_tests * 4} values) took ${preparsed_distance} milliseconds on average ($total total)")
 
   // Select
-  // This only tests the performance lost from chunking, as the expression ultimately just means "always" due to optimisation
 
-  val select_query = """SELECT * FROM (SELECT * FROM insert_test JOIN SELECT * FROM insert_test JOIN SELECT * FROM insert_test JOIN SELECT * FROM insert_test JOIN SELECT * FROM insert_test) WITH 'c | (a b)'"""
+  val select_query = """SELECT * FROM (SELECT * FROM insert_test JOIN SELECT * FROM insert_test JOIN SELECT * FROM insert_test JOIN SELECT * FROM insert_test JOIN SELECT * FROM insert_test) WITH 'a c'"""
 
-  val select_distance = timeit(10)(() => {
+  val select_distance = timeit(32)(() => {
     val parsed_insert = parser.parseAll(parser.QUERY, select_query).get
     println("Determined size: " + evaluate_response(parsed_insert.evaluate[DatabaseRow](datapool).responses.head).get.size.toString)
   })

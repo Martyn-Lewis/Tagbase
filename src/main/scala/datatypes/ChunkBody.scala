@@ -26,13 +26,13 @@ class ChunkBody(val size: Int, var behind: ChunkBase) extends ChunkBase {
     }
 
   def create_copy(): ChunkBody = {
-    val result = new ChunkBody(size, behind)
-    result.front = front
-    for(i <- 0 until  distance) {
-      result.elements(i) = elements(i)
+    this.synchronized {
+      val result = new ChunkBody(size, behind)
+      result.front = front
+      elements.copyToArray(result.elements, 0, size)
+      result.distance = distance
+      result
     }
-    result.distance = distance
-    result
   }
 
   override def next(): Option[ChunkBase] = front

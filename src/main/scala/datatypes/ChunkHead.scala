@@ -20,20 +20,23 @@ class ChunkHead(var default_depth: Int) extends ChunkBase {
       case Some(c: ChunkBody) => lookahead(c)
       case None => into
     }
-    tail match {
+    val chunk = tail match {
       case Some(chunk) =>
         if(chunk.distance == chunk.size)
           tail = Some(lookahead(chunk))
-        chunk.insert(element)
+        chunk
       case None => front match {
         case Some(chunk) =>
           tail = Some(lookahead(chunk))
-          chunk.insert(element)
+          chunk
         case None =>
           val ahead = new ChunkBody(default_depth, this)
           front = Some(ahead)
-          ahead.insert(element)
+          ahead
       }
+    }
+    chunk.synchronized {
+      chunk.insert(element)
     }
   }
 }

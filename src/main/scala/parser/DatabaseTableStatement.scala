@@ -2,7 +2,7 @@ package parser
 
 import datatypes.{DatabasePool, SelectResponse, DatabaseIterator}
 
-class DatabaseTableStatement(database: String) extends TableStatement {
+class DatabaseTableStatement(val database: String) extends TableStatement {
   override def toString: String = "database@" + database
 
   override def indented_print(indent: Int) = println(("\t" * indent) + "database reference: " +  database)
