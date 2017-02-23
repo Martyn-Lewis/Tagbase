@@ -24,6 +24,7 @@ class DatabaseIterator(database: Database) extends AbstractIterator[DatabaseRow]
                 offset = 0
                 if (p.distance < p.size)
                   p.synchronized {
+                    // For thread-safety we have to use copy-on-read on incomplete chunks.
                     Some(p.create_copy())
                   }
                 else Some(p)
