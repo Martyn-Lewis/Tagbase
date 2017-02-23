@@ -20,11 +20,14 @@ class DatabaseIterator(database: Database) extends AbstractIterator[DatabaseRow]
           current_chunk = chunk.next() match {
             case None => None
             case Some(p: ChunkBody) =>
-              if(p.distance > 0)
-                p.synchronized {
-                  offset = 0
-                  Some(p.create_copy())
-                }
+              if(p.distance > 0) {
+                offset = 0
+                if (p.distance < p.size)
+                  p.synchronized {
+                    Some(p.create_copy())
+                  }
+                else Some(p)
+              }
               else None
           }
         }
