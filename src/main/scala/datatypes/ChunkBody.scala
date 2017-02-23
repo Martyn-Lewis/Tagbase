@@ -18,6 +18,8 @@ class ChunkBody(val size: Int, var behind: ChunkBase) extends ChunkBase {
     case None => distance
   }
 
+  override def sync_insert(element: DatabaseRow) = insert(element)
+
   def insert(element: DatabaseRow): Unit =
     if(distance >= size) ensure_next(size).insert(element)
     else {

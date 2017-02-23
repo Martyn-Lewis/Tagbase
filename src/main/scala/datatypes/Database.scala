@@ -8,6 +8,20 @@ class Database(val enabled_indexes: Boolean) {
   var indexes: collection.mutable.Map[String, Int] = collection.mutable.Map[String, Int]()
   var index_records: collection.mutable.Map[String, ArrayBuffer[Taggable]] = collection.mutable.Map[String, ArrayBuffer[Taggable]]()
 
+  def sync_add_element(element: DatabaseRow): Unit = {
+    head_chunk.sync_insert(element)
+    element.tags foreach ((x) => {
+      if (indexes.contains(x)) indexes(x) += 1
+      else indexes(x) = 1
+
+      if (enabled_indexes) {
+        if (!index_records.contains(x))
+          index_records(x) = ArrayBuffer.empty[Taggable]
+        index_records(x) += element
+      }
+    })
+  }
+
   def add_element(element: DatabaseRow): Unit = {
     this.synchronized {
       head_chunk.insert(element)
