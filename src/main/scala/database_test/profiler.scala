@@ -1,10 +1,92 @@
 package database_test
 
-import datatypes.Taggable
-import parser.{AllExpression, ExpressionParser, TagExpression}
+import java.lang
+
+import datatypes._
+import parser.{AllExpression, ExpressionParser, QueryParser, TagExpression}
+
+object nuprofiler extends scala.App {
+  val datapool = new DatabasePool
+  val parser = new QueryParser
+
+  def timeit(times: Int)(f: (() => Unit)): Double = {
+    var average: Double = 0.0
+    for(i <- 1 to times) {
+      val evaluate_start = System.nanoTime().asInstanceOf[Double]
+      f()
+      val evaluate_end = System.nanoTime().asInstanceOf[Double]
+      val distance = evaluate_end - evaluate_start
+      val millis = distance / (1000 * 1000)
+      println(s"Cycle $i took $millis milliseconds")
+      if(average == 0.0)
+        average = millis
+      else
+        average = (average + millis) / 2
+    }
+    average
+  }
+
+  def evaluate_response(response: DatabaseResponse): Option[Iterator[DatabaseRow]] = response match {
+    case resp: CountResponse =>
+      println("Count:")
+      resp.results foreach ((x) => {
+        println(x._1.toString + " has " + x._2.toString + " elements")
+      })
+      None
+    case resp: SelectResponse[DatabaseRow] =>
+      var i = 0
+      Some(resp.iterator)
+    case resp: InsertResponse =>
+      resp.inserts.foreach((x) => {
+        val as_map = x.objects.toMap
+        datapool.get_pool(resp.database).add_element(new DatabaseRow(as_map.filter(_._1 != "tags"), as_map("tags").split(",").map(_.stripPrefix("\"").stripSuffix("\"").trim).toSet))
+      })
+      None
+    case resp: MultipleResponse =>
+      resp.responses.foreach(evaluate_response)
+      None
+  }
+
+  def execute_statement(stmt: String): Unit = {
+    val parsed_insert = parser.parseAll(parser.QUERY, stmt)
+    if (parsed_insert.successful) {
+      val target = parsed_insert.get
+      evaluate_response(target.evaluate[DatabaseRow](datapool))
+    } else {
+      println("Failed to parse a statement:")
+      println(parsed_insert.toString)
+      throw new RuntimeException("Failed to parse a statement")
+    }
+  }
+
+  datapool.create_pool("insert_test")
+
+  val insert_tests = 4000
+  val insert_query = """INSERT INTO insert_test VALUES {tags="a, b, c", value="Test row 1"}, {tags="a, b, c", value="Test row 2"}, {tags="a, b, c", value="Test row 3"}, {tags="a, b, c", value="Test row 4"}"""
+
+  val distance = timeit(10)(() => {
+    for (i <- 0 until insert_tests) {
+      execute_statement(insert_query)
+    }
+  })
+
+  println(s"$insert_tests insertion statements (${insert_tests * 4} values) took ${distance} milliseconds on average")
+
+  val preparsed = parser.parseAll(parser.QUERY, insert_query).get
+  var preparsed_distance: Double = 0.0
+  val total = timeit(1)(() => {
+    preparsed_distance = timeit(400)(() => {
+      for (i <- 1 to insert_tests) {
+        evaluate_response(preparsed.evaluate[DatabaseRow](datapool))
+      }
+    })
+  })
+
+  println(s"$insert_tests preparsed insertion statements (${insert_tests * 4} values) took ${preparsed_distance} milliseconds on average ($total total)")
+
+}
 
 object profiler extends scala.App {
-
   class Datatype(contents: String, tags_to_use: Set[String]) extends Taggable {
     override var tags: Set[String] = tags_to_use
   }

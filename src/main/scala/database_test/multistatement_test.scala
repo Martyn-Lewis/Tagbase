@@ -16,9 +16,11 @@ object multistatement_test extends scala.App {
       resp.results foreach ((x) => {
         println(x._1.toString + " has " + x._2.toString + " elements")
       })
-    case resp: SelectResponse[DatabaseRow] =>
+    case resp:  SelectResponse[DatabaseRow] =>
+      var i = 0
       resp.iterator.foreach((x) => {
-        println(s"Database result: (${x.tags.map(_.toString).mkString(", ")}) ${x.asInstanceOf[DatabaseRow].contents}")
+        i += 1
+        println(s"($i) Database result: (${x.tags.map(_.toString).mkString(", ")}) ${x.asInstanceOf[DatabaseRow].contents}")
       })
     case resp: InsertResponse =>
       resp.inserts.foreach((x) => {
@@ -48,7 +50,9 @@ object multistatement_test extends scala.App {
   var directory = db.create_pool("my_directory")
   var pool3 = db.create_pool("some_database")
 
-  execute_statement("""INSERT INTO db1 VALUES {tags="a, b, c", value="Test row 1"}, {tags="a, b, c", value="Test row 2"}""")
+  for(i <- 1 to 200) {
+    execute_statement("""INSERT INTO db1 VALUES {tags="a, b, c", value="Test row 1"}, {tags="a, b, c", value="Test row 2"}""")
+  }
   execute_statement("""INSERT INTO db2 VALUES {tags="a, b, c", value="Test row 3"}, {tags="a, b, c", value="Test row 4"}""")
   execute_statement("""SELECT * FROM db1 WITH 'a b'""")
   execute_statement("""SELECT * FROM (SELECT * FROM db1 WITH 'a' JOIN SELECT * FROM db2 WITH 'b') WITH 'a b'""")
