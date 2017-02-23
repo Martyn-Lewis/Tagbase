@@ -5,6 +5,8 @@ import java.lang
 import datatypes._
 import parser.{AllExpression, ExpressionParser, QueryParser, TagExpression}
 
+import scala.collection.mutable.ArrayBuffer
+
 object nuprofiler extends scala.App {
   val datapool = new DatabasePool
   val parser = new QueryParser
@@ -98,49 +100,49 @@ object profiler extends scala.App {
   }
 
   val test_parser = new ExpressionParser()
-  var data: List[Datatype] = List()
+  var data: ArrayBuffer[Datatype] = ArrayBuffer.empty[Datatype]
 
   println("Constructing dataset")
   val construct_start = System.nanoTime()
 
-  var predata: List[Datatype] = List()
-  var indexes: collection.mutable.Map[String, List[Datatype]] = collection.mutable.Map[String, List[Datatype]]()
+  var predata: ArrayBuffer[Datatype] = ArrayBuffer.empty[Datatype]
+  var indexes: collection.mutable.Map[String, ArrayBuffer[Datatype]] = collection.mutable.Map[String, ArrayBuffer[Datatype]]()
   for(k <- List("a", "b", "c", "d", "e", "f")) {
-    indexes(k) = List.empty
+    indexes(k) = ArrayBuffer.empty[Datatype]
   }
-  predata ::= new Datatype("d1", Set("a"))
-  indexes("a") ::= predata.head
-  predata ::= new Datatype("d2", Set("a", "b"))
-  indexes("a") ::= predata.head
-  indexes("b") ::= predata.head
-  predata ::= new Datatype("d3", Set("a", "b", "c"))
-  indexes("a") ::= predata.head
-  indexes("b") ::= predata.head
-  indexes("c") ::= predata.head
-  predata ::= new Datatype("d4", Set("a", "b", "c", "d"))
-  indexes("a") ::= predata.head
-  indexes("b") ::= predata.head
-  indexes("c") ::= predata.head
-  indexes("d") ::= predata.head
-  predata ::= new Datatype("d5", Set("a", "b", "c", "d", "e"))
-  indexes("a") ::= predata.head
-  indexes("b") ::= predata.head
-  indexes("c") ::= predata.head
-  indexes("d") ::= predata.head
-  indexes("e") ::= predata.head
-  predata ::= new Datatype("d6", Set("a", "b", "c", "d", "e", "f"))
-  indexes("a") ::= predata.head
-  indexes("b") ::= predata.head
-  indexes("c") ::= predata.head
-  indexes("d") ::= predata.head
-  indexes("e") ::= predata.head
-  indexes("f") ::= predata.head
+  predata += new Datatype("d1", Set("a"))
+  indexes("a") += predata(0)
+  predata += new Datatype("d2", Set("a", "b"))
+  indexes("a") += predata(1)
+  indexes("b") += predata(1)
+  predata += new Datatype("d3", Set("a", "b", "c"))
+  indexes("a") += predata(2)
+  indexes("b") += predata(2)
+  indexes("c") += predata(2)
+  predata += new Datatype("d4", Set("a", "b", "c", "d"))
+  indexes("a") += predata(3)
+  indexes("b") += predata(3)
+  indexes("c") += predata(3)
+  indexes("d") += predata(3)
+  predata += new Datatype("d5", Set("a", "b", "c", "d", "e"))
+  indexes("a") += predata(4)
+  indexes("b") += predata(4)
+  indexes("c") += predata(4)
+  indexes("d") += predata(4)
+  indexes("e") += predata(4)
+  predata += new Datatype("d6", Set("a", "b", "c", "d", "e", "f"))
+  indexes("a") += predata(5)
+  indexes("b") += predata(5)
+  indexes("c") += predata(5)
+  indexes("d") += predata(5)
+  indexes("e") += predata(5)
+  indexes("f") += predata(5)
 
-  data :::= predata
+  data ++= predata
   for (i <- 1 to 20) {
-    data :::= data
+    data ++=  data
     for(k <- indexes.keys) {
-      indexes(k) :::= indexes(k)
+      indexes(k) ++= indexes(k)
     }
   }
 
@@ -190,7 +192,7 @@ object profiler extends scala.App {
           //val result = (data filter compiled).toList
           var result = 0
 
-          result = compiled.evaluate_many(source.toIterator).size
+          result = compiled.evaluate_many(data.toIterator).size
 
           val evaluate_end = System.nanoTime().asInstanceOf[Double]
           val seconds: Double = (evaluate_end - evaluate_start) / 1000000000.0
