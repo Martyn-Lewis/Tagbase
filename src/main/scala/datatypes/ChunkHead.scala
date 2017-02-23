@@ -15,43 +15,19 @@ class ChunkHead(var default_depth: Int) extends ChunkBase {
   }
 
   override def sync_insert(element: DatabaseRow) = {
-    // Copy paste until I properly refactor this
-    def lookahead(into: ChunkBody): ChunkBody = into.next() match {
-      case Some(c: ChunkBody) => lookahead(c)
-      case None => into
-    }
-    val chunk = tail match {
-      case Some(chunk) =>
-        if(chunk.distance == chunk.size)
-          tail = Some(lookahead(chunk))
-        chunk
-      case None => front match {
-        case Some(chunk) =>
-          tail = Some(lookahead(chunk))
-          chunk
-        case None =>
-          val ahead = new ChunkBody(default_depth, this)
-          front = Some(ahead)
-          ahead
-      }
-    }
-    chunk.insert(element)
+    sync_get_latest_chunk().insert(element)
   }
 
-  override def insert(element: DatabaseRow): Unit = {
-    // An overzealous assumption is made here that the parent pool will be synchronised.
-    // If that is not the case, then the likes of tail/etc may simply be invalid.
-    // I'm not sure if I should remove this assumption since it may cost even more performance.
-    // I likely should.
-
+  def sync_get_latest_chunk(): ChunkBody = {
     @tailrec
     def lookahead(into: ChunkBody): ChunkBody = into.next() match {
       case Some(c: ChunkBody) => lookahead(c)
       case None => into
     }
-    val chunk = tail match {
+
+    tail match {
       case Some(chunk) =>
-        if(chunk.distance == chunk.size)
+        if (chunk.distance == chunk.size)
           tail = Some(lookahead(chunk))
         chunk
       case None => front match {
@@ -64,6 +40,17 @@ class ChunkHead(var default_depth: Int) extends ChunkBase {
           ahead
       }
     }
+  }
+
+  def async_get_latest_chunk(): ChunkBody = {
+    this.synchronized {
+      sync_get_latest_chunk()
+    }
+  }
+
+  override def insert(element: DatabaseRow): Unit = {
+    val chunk = async_get_latest_chunk()
+
     chunk.synchronized {
       chunk.insert(element)
     }
