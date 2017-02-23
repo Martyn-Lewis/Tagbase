@@ -75,7 +75,7 @@ object nuprofiler extends scala.App {
   val preparsed = parser.parseAll(parser.QUERY, insert_query).get
   var preparsed_distance: Double = 0.0
   val total = timeit(1)(() => {
-    preparsed_distance = timeit(400)(() => {
+    preparsed_distance = timeit(100)(() => {
       for (i <- 1 to insert_tests) {
         evaluate_response(preparsed.evaluate[DatabaseRow](datapool))
       }
@@ -84,6 +84,17 @@ object nuprofiler extends scala.App {
 
   println(s"$insert_tests preparsed insertion statements (${insert_tests * 4} values) took ${preparsed_distance} milliseconds on average ($total total)")
 
+  // Select
+  // This only tests the performance lost from chunking, as the expression ultimately just means "always" due to optimisation
+
+  val select_query = """SELECT * FROM (SELECT * FROM insert_test JOIN SELECT * FROM insert_test JOIN SELECT * FROM insert_test JOIN SELECT * FROM insert_test JOIN SELECT * FROM insert_test) WITH 'c | (a b)'"""
+
+  val select_distance = timeit(10)(() => {
+    val parsed_insert = parser.parseAll(parser.QUERY, select_query).get
+    println("Determined size: " + evaluate_response(parsed_insert.evaluate[DatabaseRow](datapool).responses.head).get.size.toString)
+  })
+
+  println(s"${datapool.get_pool("insert_test").head_chunk.calculate_size() * 5} selects took an average of ${select_distance} milliseconds")
 }
 
 object profiler extends scala.App {

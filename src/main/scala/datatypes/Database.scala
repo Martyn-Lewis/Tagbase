@@ -24,5 +24,5 @@ class Database(val enabled_indexes: Boolean) {
 }
 
 object Database {
-  val default_chunk_depth = 16000
+  val default_chunk_depth = 512
 }
