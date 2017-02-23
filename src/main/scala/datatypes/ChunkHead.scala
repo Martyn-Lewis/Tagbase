@@ -37,6 +37,7 @@ class ChunkHead(var default_depth: Int) extends ChunkBase {
         case None =>
           val ahead = new ChunkBody(default_depth, this)
           front = Some(ahead)
+          tail = front
           ahead
       }
     }
