@@ -5,6 +5,12 @@ import scala.util.parsing.combinator.RegexParsers
 import exceptions.ParserExpressionException
 
 class QueryParser extends RegexParsers {
+  def parse_expression(expression: String): Expression = expressionParser.parse(expressionParser.EXPRESSION, expression) match {
+    case expressionParser.Success(expression: Expression, _) => expression
+    case expressionParser.Failure(msg, _) => throw new ParserExpressionException("Parser Expression failure:" + msg)
+    case expressionParser.Error(msg, _) => throw new ParserExpressionException("Parser Expression error:" + msg)
+  }
+
   override val skipWhitespace = false
   val expressionParser: ExpressionParser = new ExpressionParser
   def KW_COUNT: Parser[String] = """COUNT""".r ^^ { _.toString }
@@ -68,7 +74,7 @@ class QueryParser extends RegexParsers {
   // SELECT typestring FROM tablestring WHERE 'query'
   def SELECT_FROM: Parser[SelectStatement] = (KW_SELECT <~ whiteSpace) ~ (TYPESTRING <~ whiteSpace) ~ (KW_FROM <~ whiteSpace) ~ TABLE ~ opt((whiteSpace ~> KW_WITH) ~ (whiteSpace ~> SUBEXPR)) ^^ {
     case kw_select ~ typestring ~ kw_from ~ table ~ opt => opt match {
-      case Some(kw_with ~ expression) => new SelectStatement(table, typestring, expressionParser.parse(expressionParser.EXPRESSION, expression).get)
+      case Some(kw_with ~ expression) => new SelectStatement(table, typestring, parse_expression(expression))
       case _ => new SelectStatement(table, typestring, new AlwaysExpression)
     }
   }
@@ -76,19 +82,14 @@ class QueryParser extends RegexParsers {
   // COUNT typestring FROM tablestring WHERE 'query'
   def COUNT_FROM: Parser[CountStatement] = (KW_COUNT <~ whiteSpace) ~ (TYPESTRING <~ whiteSpace) ~ (KW_FROM <~ whiteSpace) ~ TABLE ~ opt((whiteSpace ~> KW_WITH) ~ (whiteSpace ~> SUBEXPR)) ^^ {
     case kw_count ~ typestring ~ kw_from ~ table ~ option => option match {
-      case Some(kw_with ~ expression) => new CountStatement(table, typestring, expressionParser.parse(expressionParser.EXPRESSION, expression).get)
+      case Some(kw_with ~ expression) => new CountStatement(table, typestring, parse_expression(expression))
       case _ => new CountStatement(table, typestring, new AlwaysExpression)
     }
   }
 
   // DELETE FROM tablestring WITH 'query'
   def DELETE_FROM: Parser[Statement] = (KW_DELETE <~ whiteSpace) ~ (DBSTRING <~ whiteSpace) ~ opt((KW_WITH <~ whiteSpace) ~ SUBEXPR) ^^ {
-    case _del ~ database ~ Some(_with ~ expr) =>
-      expressionParser.parse(expressionParser.EXPRESSION, expr) match {
-        case expressionParser.Success(expression: Expression, _) => new DeleteStatement(database, expression)
-        case expressionParser.Failure(msg, _) => throw new ParserExpressionException("Parser Expression failure:" + msg)
-        case expressionParser.Error(msg, _) => throw new ParserExpressionException("Parser Expression error:" + msg)
-      }
+    case _del ~ database ~ Some(_with ~ expr) => new DeleteStatement(database, parse_expression(expr))
     case _del ~ database ~ None => new WipeStatement(database)
   }
 
