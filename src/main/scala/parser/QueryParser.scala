@@ -64,7 +64,7 @@ class QueryParser extends RegexParsers {
       new QueryObject(middle)
   }
 
-  // INSERT INTO tablestring VALUES { tags={...}, type=typestring, value=<typestring>::value }, ...
+  // INSERT INTO tablestring VALUES { tags={...}, [value="something", ...] }, ...
 
   def INSERT_INTO: Parser[InsertStatement] = (KW_INSERT <~ whiteSpace) ~ (DBSTRING <~ whiteSpace) ~ (KW_VALUES <~ whiteSpace) ~ rep1sep(OBJECT, opt(whiteSpace) ~ "," ~ opt(whiteSpace)) ^^ {
     case insert ~ table ~ values ~ objects =>
