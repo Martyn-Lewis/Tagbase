@@ -3,7 +3,7 @@ package datatypes
 import scala.collection.mutable.ArrayBuffer
 
 class Database(val enabled_indexes: Boolean, val initial_chunk_depth: Int = Database.default_chunk_depth) {
-  val head_chunk = new ChunkHead(initial_chunk_depth)
+  var head_chunk = new ChunkHead(initial_chunk_depth) // var for wiping
 
   var indexes: collection.mutable.Map[String, Int] = collection.mutable.Map[String, Int]()
   var index_records: collection.mutable.Map[String, ArrayBuffer[Taggable]] = collection.mutable.Map[String, ArrayBuffer[Taggable]]()

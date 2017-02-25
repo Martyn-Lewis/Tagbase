@@ -1,5 +1,7 @@
 package datatypes
 
+import sun.font.TrueTypeFont
+
 class ChunkBody(val size: Int, var behind: ChunkBase) extends ChunkBase {
   var front: Option[ChunkBody] = None
   val elements: Array[DatabaseRow] = new Array[DatabaseRow](size)
@@ -35,6 +37,23 @@ class ChunkBody(val size: Int, var behind: ChunkBase) extends ChunkBase {
       result.distance = distance
       result
     }
+  }
+
+  override def delete_with(f: (DatabaseRow) => Boolean) = {
+    val wiped_elements = elements.filter({
+      case null => true
+      case row: DatabaseRow => !f(row)
+    })
+
+    if(wiped_elements.length != elements.length) {
+      val result = new ChunkBody(wiped_elements.length, behind)
+      wiped_elements.copyToArray(result.elements)
+      result.distance = size - wiped_elements.size
+      result.front = front
+      result.behind = behind
+      Some(result)
+    } else
+      None
   }
 
   override def next(): Option[ChunkBase] = front
