@@ -18,6 +18,13 @@
     Database result: (photos, dogs) Map(path -> "puppy.jpg")
     Executing statement: SELECT path, attributes FROM my_directory WITH 'kittens'
     Database result: (photos, kittens) Map(path -> "kitty.jpg", attributes -> "read-only")
+    ...
+    Executing statement: SELECT * FROM db1
+    (1) Database result: (a, b, c) Map(value -> "Test row 1")
+    (2) Database result: (deleteme) Map(value -> "Test row 2")
+    Executing statement: DELETE FROM db1 WITH 'deleteme'
+    Executing statement: SELECT * FROM db1
+    (1) Database result: (a, b, c) Map(value -> "Test row 1")
 
 # What does it do?
 It's currently a parser that takes simple boolean expressions (such as "a ? b : (c | d | (b e))") that act on tags (which are attached to objects) and builds them into a composed function.
