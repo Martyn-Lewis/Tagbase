@@ -29,6 +29,12 @@ object multistatement_test extends scala.App {
         db.get_pool(resp.database).add_element(new DatabaseRow(as_map.filter(_._1 != "tags"), as_map("tags").split(",").map(_.stripPrefix("\"").stripSuffix("\"").trim).toSet))
       })
     case resp: MultipleResponse => resp.responses.foreach(evaluate_response)
+    case resp: WipeResponse =>
+      val pool = db.get_pool(resp.database)
+      pool.head_chunk = new ChunkHead(pool.initial_chunk_depth)
+      pool.indexes.clear()
+    case resp: DeleteResponse =>
+      db.get_pool(resp.database).head_chunk.delete_with(resp.expression)
   }
 
   def execute_statement(stmt: String) = {
@@ -50,12 +56,14 @@ object multistatement_test extends scala.App {
   var directory = db.create_pool("my_directory")
   var pool3 = db.create_pool("some_database")
 
-  for(i <- 1 to 200) {
-    execute_statement("""INSERT INTO db1 VALUES {tags="a, b, c", value="Test row 1"}, {tags="a, b, c", value="Test row 2"}""")
-  }
+  execute_statement("""INSERT INTO db1 VALUES {tags="a, b, c", value="Test row 1"}, {tags="deleteme", value="Test row 2"}""")
   execute_statement("""INSERT INTO db2 VALUES {tags="a, b, c", value="Test row 3"}, {tags="a, b, c", value="Test row 4"}""")
   execute_statement("""SELECT * FROM db1 WITH 'a b'""")
   execute_statement("""SELECT * FROM (SELECT * FROM db1 WITH 'a' JOIN SELECT * FROM db2 WITH 'b') WITH 'a b'""")
+
+  execute_statement("""SELECT * FROM db1""")
+  execute_statement("""DELETE FROM db1 WITH 'deleteme'""")
+  execute_statement("""SELECT * FROM db1""")
 
   execute_statement("""INSERT INTO my_directory VALUES {tags="photos, kittens", path="kitty.jpg", attributes="read-only"}""")
   execute_statement("""INSERT INTO my_directory VALUES {tags="photos, dogs", path="puppy.jpg", attributes="read-only"}""")

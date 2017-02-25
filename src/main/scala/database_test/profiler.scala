@@ -43,6 +43,14 @@ object nuprofiler extends scala.App {
     case resp: MultipleResponse =>
       resp.responses.foreach(evaluate_response)
       None
+    case resp: WipeResponse =>
+      val pool = datapool.get_pool(resp.database)
+      pool.head_chunk = new ChunkHead(pool.initial_chunk_depth)
+      pool.indexes.clear()
+      None
+    case resp: DeleteResponse =>
+      datapool.get_pool(resp.database).head_chunk.delete_with(resp.expression)
+      None
   }
 
   def execute_statement(stmt: String): Unit = {
@@ -62,13 +70,13 @@ object nuprofiler extends scala.App {
   val insert_tests = 4000
   val insert_query = """INSERT INTO insert_test VALUES {tags="a, b, c", value="Test row 1"}, {tags="a, b", value="Test row 2"}, {tags="a", value="Test row 3"}, {tags="a, b, c, d", value="Test row 4"}"""
 
-  val distance = timeit(10)(() => {
+  /*val distance = timeit(10)(() => {
     for (i <- 0 until insert_tests) {
       execute_statement(insert_query)
     }
-  })
+  })*/
 
-  println(s"$insert_tests insertion statements (${insert_tests * 4} values) took ${distance} milliseconds on average")
+  //println(s"$insert_tests insertion statements (${insert_tests * 4} values) took ${distance} milliseconds on average")
 
   val preparsed = parser.parseAll(parser.QUERY, insert_query).get
   var preparsed_distance: Double = 0.0
@@ -83,15 +91,22 @@ object nuprofiler extends scala.App {
   println(s"$insert_tests preparsed insertion statements (${insert_tests * 4} values) took ${preparsed_distance} milliseconds on average ($total total)")
 
   // Select
-
-  val select_query = """SELECT * FROM (SELECT * FROM insert_test JOIN SELECT * FROM insert_test JOIN SELECT * FROM insert_test JOIN SELECT * FROM insert_test JOIN SELECT * FROM insert_test) WITH 'a c'"""
+  /*val select_query = """SELECT * FROM (SELECT * FROM insert_test JOIN SELECT * FROM insert_test JOIN SELECT * FROM insert_test JOIN SELECT * FROM insert_test JOIN SELECT * FROM insert_test) WITH 'a c'"""
 
   val select_distance = timeit(32)(() => {
     val parsed_insert = parser.parseAll(parser.QUERY, select_query).get
     println("Determined size: " + evaluate_response(parsed_insert.evaluate[DatabaseRow](datapool).responses.head).get.size.toString)
   })
 
-  println(s"${datapool.get_pool("insert_test").head_chunk.calculate_size() * 5} selects took an average of ${select_distance} milliseconds")
+  println(s"${datapool.get_pool("insert_test").head_chunk.calculate_size() * 5} selects took an average of ${select_distance} milliseconds")*/
+
+  val presize = datapool.get_pool("insert_test").head_chunk.calculate_size()
+  val delete_distance = timeit(1)(() => {
+    execute_statement("""DELETE FROM insert_test WITH 'c'""")
+  })
+  val postsize = datapool.get_pool("insert_test").head_chunk.calculate_size()
+
+  println(s"Took $delete_distance milliseconds to remove ${presize - postsize} elements from a ${presize} element database.")
 }
 
 object profiler extends scala.App {
