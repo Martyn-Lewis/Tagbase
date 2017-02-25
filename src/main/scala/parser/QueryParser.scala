@@ -2,6 +2,7 @@ package parser
 
 import scala.util.matching.Regex.Match
 import scala.util.parsing.combinator.RegexParsers
+import exceptions.ParserExpressionException
 
 class QueryParser extends RegexParsers {
   override val skipWhitespace = false
@@ -11,6 +12,7 @@ class QueryParser extends RegexParsers {
   def KW_FROM: Parser[String] = """FROM""".r ^^ { _.toString }
   def KW_WITH: Parser[String] = """WITH""".r ^^ { _.toString }
   def KW_INSERT: Parser[String] = """INSERT""".r ~ whiteSpace ~ """INTO""".r ^^ { case l ~ _ ~ r => l + " " + r }
+  def KW_DELETE: Parser[String] = """DELETE""".r ~ whiteSpace ~ """FROM""".r ^^ { case l ~ _ ~ r => l + " " + r }
   def KW_VALUES: Parser[String] = """VALUES""".r ^^ { _.toString }
   def TYPESTRING: Parser[List[String]] = (rep1sep(DBSTRING, opt(whiteSpace) ~ "," ~ opt(whiteSpace)) | "*") ^^ {
     case types: List[String] => types
@@ -79,9 +81,20 @@ class QueryParser extends RegexParsers {
     }
   }
 
+  // DELETE FROM tablestring WITH 'query'
+  def DELETE_FROM: Parser[Statement] = (KW_DELETE <~ whiteSpace) ~ (DBSTRING <~ whiteSpace) ~ opt((KW_WITH <~ whiteSpace) ~ SUBEXPR) ^^ {
+    case _del ~ database ~ Some(_with ~ expr) =>
+      expressionParser.parse(expressionParser.EXPRESSION, expr) match {
+        case expressionParser.Success(expression: Expression, _) => new DeleteStatement(database, expression)
+        case expressionParser.Failure(msg, _) => throw new ParserExpressionException("Parser Expression failure:" + msg)
+        case expressionParser.Error(msg, _) => throw new ParserExpressionException("Parser Expression error:" + msg)
+      }
+    case _del ~ database ~ None => new WipeStatement(database)
+  }
+
   // <SELECT> JOIN <SELECT | JOIN>
   def JOIN_STMT: Parser[Statement] = rep1sep(SELECT_FROM, whiteSpace ~ """JOIN""".r ~ whiteSpace) ^^ { case statements => if(statements.size > 1) new JoinStatement(statements) else statements.head }
 
-  def STATEMENT: Parser[Statement] = opt(whiteSpace) ~> (JOIN_STMT | COUNT_FROM | INSERT_INTO) <~ opt(NEWLINE)
+  def STATEMENT: Parser[Statement] = opt(whiteSpace) ~> (JOIN_STMT | COUNT_FROM | INSERT_INTO | DELETE_FROM) <~ opt(NEWLINE)
   def QUERY: Parser[StatementCollection] = rep1sep(STATEMENT, opt(whiteSpace) ~ SEMICOLON) ^^ { case s => new StatementCollection(s) }
 }
