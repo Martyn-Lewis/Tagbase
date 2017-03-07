@@ -4,9 +4,6 @@ import datatypes._
 import parser.{QueryParser, SelectStatement, StatementCollection}
 
 object multistatement_test extends scala.App {
-  // Note: Currently the statement has too much power over the database.
-  // It would perhaps be much saner though slower to have the statement yield transactions or similar instead.
-
   var db = new DatabasePool
   val parser = new QueryParser
 
