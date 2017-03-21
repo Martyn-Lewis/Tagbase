@@ -1,7 +1,5 @@
 package datatypes
 
-import sun.font.TrueTypeFont
-
 class ChunkBody(val size: Int, var behind: ChunkBase) extends ChunkBase {
   var front: Option[ChunkBody] = None
   val elements: Array[DatabaseRow] = new Array[DatabaseRow](size)
